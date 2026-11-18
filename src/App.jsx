@@ -14,10 +14,7 @@ export function App() {
   if (loading) {
     return (
       <div className="auth-wrapper">
-        <div className="loading-state">
-          <div className="animate-spin" style={{ fontSize: '2rem', marginBottom: '1rem' }}>⏳</div>
-          <p>Connecting to Care Guide Secure API...</p>
-        </div>
+        <div className="empty-state">Loading application...</div>
       </div>
     );
   }

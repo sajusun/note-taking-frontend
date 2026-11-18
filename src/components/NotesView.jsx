@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { notesApi } from '../services/api';
-import { Plus, Edit2, Trash2, Calendar, User, ChevronLeft, ChevronRight, Search, ShieldCheck } from 'lucide-react';
 
 export const NotesView = () => {
   const { user, isAdmin } = useAuth();
@@ -9,7 +8,6 @@ export const NotesView = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   
-  // Pagination State
   const [page, setPage] = useState(1);
   const [limit] = useState(6);
   const [pagination, setPagination] = useState({
@@ -19,10 +17,7 @@ export const NotesView = () => {
     hasPrevPage: false
   });
 
-  // Admin filter toggle: view all vs view own
   const [viewAll, setViewAll] = useState(false);
-
-  // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingNote, setEditingNote] = useState(null);
   const [title, setTitle] = useState('');
@@ -33,7 +28,6 @@ export const NotesView = () => {
     setLoading(true);
     setError('');
     try {
-      // If admin and viewing own only, pass userId=user.id. Otherwise regular user automatically only gets their own
       const filterUserId = (isAdmin && !viewAll) ? user._id || user.id : '';
       const res = await notesApi.getNotes(page, limit, filterUserId);
       if (res.success) {
@@ -84,7 +78,7 @@ export const NotesView = () => {
   };
 
   const handleDeleteNote = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this note?')) return;
+    if (!window.confirm('Delete this note?')) return;
     try {
       await notesApi.deleteNote(id);
       fetchNotes();
@@ -95,22 +89,21 @@ export const NotesView = () => {
 
   return (
     <div className="view-container">
-      {/* Top Action Bar */}
       <div className="view-header">
         <div>
           <h1 className="view-title">
-            {isAdmin && viewAll ? "All System Notes (Admin View)" : "My Personal Notes"}
+            {isAdmin && viewAll ? "All Notes" : "My Notes"}
           </h1>
           <p className="view-subtitle">
             {isAdmin && viewAll
-              ? "Displaying notes created by all users across the platform."
-              : "Secure private notes protected with Role-Based Access Control and compound indexes."}
+              ? "Viewing all notes in the database (Admin privilege)"
+              : "Private personal notes with pagination"}
           </p>
         </div>
 
         <div className="header-actions">
           {isAdmin && (
-            <div className="admin-toggle-group">
+            <div className="toggle-group">
               <button
                 className={`toggle-btn ${!viewAll ? 'active' : ''}`}
                 onClick={() => { setViewAll(false); setPage(1); }}
@@ -121,81 +114,62 @@ export const NotesView = () => {
                 className={`toggle-btn ${viewAll ? 'active' : ''}`}
                 onClick={() => { setViewAll(true); setPage(1); }}
               >
-                All Users' Notes
+                All Notes
               </button>
             </div>
           )}
 
           <button className="btn-primary" onClick={handleOpenCreateModal}>
-            <Plus size={18} />
-            <span>Create New Note</span>
+            + New Note
           </button>
         </div>
       </div>
 
       {error && <div className="alert-error">{error}</div>}
 
-      {/* Notes Grid */}
       {loading ? (
-        <div className="loading-state">Loading notes from MongoDB...</div>
+        <div className="empty-state">Loading notes...</div>
       ) : notes.length === 0 ? (
         <div className="empty-state">
-          <p className="empty-title">No notes found</p>
-          <p className="empty-subtitle">
-            {isAdmin && viewAll ? "There are no notes in the system." : "You haven't created any notes yet."}
-          </p>
-          <button className="btn-primary" onClick={handleOpenCreateModal}>
-            Create your first note
+          <p>No notes found.</p>
+          <button className="btn-primary" style={{ marginTop: '0.75rem' }} onClick={handleOpenCreateModal}>
+            Create Note
           </button>
         </div>
       ) : (
         <div className="notes-grid">
           {notes.map((note) => {
             const isOwner = note.userId?._id === (user._id || user.id) || note.userId === (user._id || user.id);
-            const authorName = note.userId?.name || 'Unknown Author';
-            const authorRole = note.userId?.role || 'user';
+            const author = note.userId?.name || 'Unknown';
 
             return (
               <div key={note._id} className="note-card">
-                <div className="note-card-header">
-                  <h3 className="note-title">{note.title}</h3>
-                  <div className="note-actions">
+                <div>
+                  <div className="note-card-header">
+                    <h3 className="note-title">{note.title}</h3>
                     {(isOwner || isAdmin) && (
-                      <>
+                      <div className="note-actions">
                         <button
-                          className="icon-btn edit"
+                          className="btn-icon"
                           onClick={() => handleOpenEditModal(note)}
-                          title="Edit Note"
                         >
-                          <Edit2 size={16} />
+                          Edit
                         </button>
                         <button
-                          className="icon-btn delete"
+                          className="btn-icon delete"
                           onClick={() => handleDeleteNote(note._id)}
-                          title="Delete Note"
                         >
-                          <Trash2 size={16} />
+                          Delete
                         </button>
-                      </>
+                      </div>
                     )}
                   </div>
+                  <p className="note-content" style={{ marginTop: '0.5rem' }}>{note.content}</p>
                 </div>
 
-                <div className="note-content">{note.content}</div>
-
                 <div className="note-footer">
-                  <div className="note-meta">
-                    <Calendar size={13} />
-                    <span>{new Date(note.createdAt).toLocaleDateString()}</span>
-                  </div>
-
-                  {isAdmin && viewAll && (
-                    <div className="author-pill">
-                      <User size={12} />
-                      <span>{authorName}</span>
-                      <span className={`pill-role ${authorRole}`}>{authorRole}</span>
-                    </div>
-                  )}
+                  <span>{new Date(note.createdAt).toLocaleDateString()}</span>
+                  {isAdmin && viewAll && <span>by {author}</span>}
                 </div>
               </div>
             );
@@ -203,60 +177,54 @@ export const NotesView = () => {
         </div>
       )}
 
-      {/* Pagination Bar */}
       {pagination.totalPages > 1 && (
         <div className="pagination-bar">
-          <div className="pagination-info">
-            Showing Page <strong>{pagination.page}</strong> of <strong>{pagination.totalPages}</strong> ({pagination.total} total notes)
-          </div>
+          <span>
+            Page {pagination.page} of {pagination.totalPages} ({pagination.total} total)
+          </span>
           <div className="pagination-controls">
             <button
               className="btn-page"
               onClick={() => setPage((prev) => Math.max(1, prev - 1))}
               disabled={!pagination.hasPrevPage}
             >
-              <ChevronLeft size={16} />
-              <span>Previous</span>
+              Previous
             </button>
-            <span className="current-page-badge">{pagination.page}</span>
             <button
               className="btn-page"
               onClick={() => setPage((prev) => prev + 1)}
               disabled={!pagination.hasNextPage}
             >
-              <span>Next</span>
-              <ChevronRight size={16} />
+              Next
             </button>
           </div>
         </div>
       )}
 
-      {/* Create / Edit Note Modal */}
       {isModalOpen && (
         <div className="modal-overlay">
           <div className="modal-card">
             <div className="modal-header">
-              <h2>{editingNote ? 'Edit Note' : 'Create New Note'}</h2>
+              <h2>{editingNote ? 'Edit Note' : 'New Note'}</h2>
               <button className="close-btn" onClick={() => setIsModalOpen(false)}>×</button>
             </div>
-            <form onSubmit={handleSaveNote} className="modal-form">
+            <form onSubmit={handleSaveNote}>
               <div className="form-group">
-                <label>Note Title</label>
+                <label>Title</label>
                 <input
                   type="text"
-                  placeholder="Enter a descriptive title..."
+                  placeholder="Note title"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   required
-                  maxLength={100}
                 />
               </div>
 
               <div className="form-group">
-                <label>Note Content</label>
+                <label>Content</label>
                 <textarea
-                  rows={5}
-                  placeholder="Write your note content here..."
+                  rows={4}
+                  placeholder="Note content..."
                   value={content}
                   onChange={(e) => setContent(e.target.value)}
                   required
@@ -272,7 +240,7 @@ export const NotesView = () => {
                   Cancel
                 </button>
                 <button type="submit" className="btn-primary" disabled={saving}>
-                  {saving ? 'Saving...' : editingNote ? 'Update Note' : 'Create Note'}
+                  {saving ? 'Saving...' : editingNote ? 'Save Changes' : 'Create Note'}
                 </button>
               </div>
             </form>
