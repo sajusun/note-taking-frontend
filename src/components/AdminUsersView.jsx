@@ -1,13 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { usersApi } from '../services/api';
-import { Users, Plus, Trash2, Shield, User, ChevronLeft, ChevronRight, Mail, Calendar } from 'lucide-react';
 
 export const AdminUsersView = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // Pagination State
   const [page, setPage] = useState(1);
   const [limit] = useState(8);
   const [pagination, setPagination] = useState({
@@ -17,7 +15,6 @@ export const AdminUsersView = () => {
     hasPrevPage: false
   });
 
-  // Create User Modal
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -71,7 +68,7 @@ export const AdminUsersView = () => {
   };
 
   const handleDeleteUser = async (id, userName) => {
-    if (!window.confirm(`Are you sure you want to delete user "${userName}"? This will cascade-delete their notes and posts.`)) {
+    if (!window.confirm(`Delete user "${userName}"? This will delete all their notes and posts.`)) {
       return;
     }
     try {
@@ -88,74 +85,60 @@ export const AdminUsersView = () => {
         <div>
           <h1 className="view-title">User Management (Admin)</h1>
           <p className="view-subtitle">
-            Admin privilege to list, create, and delete users. Supported by index <code>userSchema.index(&#123; createdAt: -1 &#125;)</code>.
+            Admin panel for viewing and managing registered users with pagination.
           </p>
         </div>
 
         <button className="btn-primary" onClick={() => setIsModalOpen(true)}>
-          <Plus size={18} />
-          <span>Add New User</span>
+          + Add User
         </button>
       </div>
 
       {error && <div className="alert-error">{error}</div>}
 
       {loading ? (
-        <div className="loading-state">Loading users from MongoDB...</div>
+        <div className="empty-state">Loading users...</div>
       ) : (
-        <div className="table-responsive">
-          <table className="custom-table">
+        <div className="table-container">
+          <table>
             <thead>
               <tr>
-                <th>User</th>
+                <th>Name</th>
+                <th>Email</th>
                 <th>Role</th>
                 <th>Interests</th>
-                <th>Joined Date</th>
-                <th>Actions</th>
+                <th>Joined</th>
+                <th>Action</th>
               </tr>
             </thead>
             <tbody>
               {users.map((u) => (
                 <tr key={u._id}>
+                  <td style={{ fontWeight: 500 }}>{u.name}</td>
+                  <td style={{ color: '#64748b' }}>{u.email}</td>
                   <td>
-                    <div className="table-user-cell">
-                      <div className="user-avatar-small">
-                        {u.name.charAt(0).toUpperCase()}
-                      </div>
-                      <div>
-                        <div className="font-semibold text-white">{u.name}</div>
-                        <div className="text-muted text-xs">{u.email}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td>
-                    <span className={`role-badge ${u.role === 'admin' ? 'badge-admin' : 'badge-user'}`}>
-                      {u.role.toUpperCase()}
+                    <span className={`role-badge ${u.role === 'admin' ? 'admin' : ''}`}>
+                      {u.role}
                     </span>
                   </td>
                   <td>
-                    <div className="interests-tag-row">
-                      {u.interests?.length > 0 ? (
-                        u.interests.map((int) => (
-                          <span key={int} className="interest-mini-chip">#{int}</span>
-                        ))
-                      ) : (
-                        <span className="text-muted text-xs">None</span>
-                      )}
-                    </div>
+                    {u.interests?.length > 0 ? (
+                      <span style={{ fontSize: '0.8rem', color: '#475569' }}>
+                        {u.interests.join(', ')}
+                      </span>
+                    ) : (
+                      <span style={{ color: '#94a3b8', fontSize: '0.8rem' }}>None</span>
+                    )}
                   </td>
-                  <td>
-                    <span className="text-sm text-muted">
-                      {new Date(u.createdAt).toLocaleDateString()}
-                    </span>
+                  <td style={{ color: '#64748b', fontSize: '0.82rem' }}>
+                    {new Date(u.createdAt).toLocaleDateString()}
                   </td>
                   <td>
                     <button
-                      className="icon-btn delete"
+                      className="btn-icon delete"
                       onClick={() => handleDeleteUser(u._id, u.name)}
-                      title="Delete User"
                     >
-                      <Trash2 size={16} />
+                      Delete
                     </button>
                   </td>
                 </tr>
@@ -165,35 +148,30 @@ export const AdminUsersView = () => {
         </div>
       )}
 
-      {/* Pagination Bar */}
       {pagination.totalPages > 1 && (
         <div className="pagination-bar">
-          <div className="pagination-info">
-            Showing Page <strong>{pagination.page}</strong> of <strong>{pagination.totalPages}</strong> ({pagination.total} total users)
-          </div>
+          <span>
+            Page {pagination.page} of {pagination.totalPages} ({pagination.total} total)
+          </span>
           <div className="pagination-controls">
             <button
               className="btn-page"
               onClick={() => setPage((prev) => Math.max(1, prev - 1))}
               disabled={!pagination.hasPrevPage}
             >
-              <ChevronLeft size={16} />
-              <span>Previous</span>
+              Previous
             </button>
-            <span className="current-page-badge">{pagination.page}</span>
             <button
               className="btn-page"
               onClick={() => setPage((prev) => prev + 1)}
               disabled={!pagination.hasNextPage}
             >
-              <span>Next</span>
-              <ChevronRight size={16} />
+              Next
             </button>
           </div>
         </div>
       )}
 
-      {/* Add User Modal */}
       {isModalOpen && (
         <div className="modal-overlay">
           <div className="modal-card">
@@ -201,12 +179,12 @@ export const AdminUsersView = () => {
               <h2>Add New User</h2>
               <button className="close-btn" onClick={() => setIsModalOpen(false)}>×</button>
             </div>
-            <form onSubmit={handleCreateUser} className="modal-form">
+            <form onSubmit={handleCreateUser}>
               <div className="form-group">
-                <label>Full Name</label>
+                <label>Name</label>
                 <input
                   type="text"
-                  placeholder="e.g. Shakib Al Hasan"
+                  placeholder="Full name"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   required
@@ -214,7 +192,7 @@ export const AdminUsersView = () => {
               </div>
 
               <div className="form-group">
-                <label>Email Address</label>
+                <label>Email</label>
                 <input
                   type="email"
                   placeholder="name@example.com"
@@ -228,7 +206,7 @@ export const AdminUsersView = () => {
                 <label>Password</label>
                 <input
                   type="password"
-                  placeholder="At least 6 characters"
+                  placeholder="Password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
@@ -238,21 +216,17 @@ export const AdminUsersView = () => {
 
               <div className="form-group">
                 <label>Role</label>
-                <select
-                  value={role}
-                  onChange={(e) => setRole(e.target.value)}
-                  className="form-select"
-                >
+                <select value={role} onChange={(e) => setRole(e.target.value)}>
                   <option value="user">User</option>
                   <option value="admin">Admin</option>
                 </select>
               </div>
 
               <div className="form-group">
-                <label>Interests (Comma separated)</label>
+                <label>Interests (comma separated)</label>
                 <input
                   type="text"
-                  placeholder="e.g. cricket, gaming, chess"
+                  placeholder="e.g. chess, reading"
                   value={interests}
                   onChange={(e) => setInterests(e.target.value)}
                 />

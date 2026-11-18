@@ -1,6 +1,5 @@
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
-import { BookOpen, Users, Hash, FileText, LogOut, Shield, User } from 'lucide-react';
 
 export const Navbar = ({ activeTab, setActiveTab }) => {
   const { user, logout, isAdmin } = useAuth();
@@ -9,13 +8,7 @@ export const Navbar = ({ activeTab, setActiveTab }) => {
     <header className="navbar">
       <div className="navbar-container">
         <div className="navbar-brand">
-          <div className="brand-logo">
-            <BookOpen size={22} className="logo-icon" />
-          </div>
-          <div>
-            <span className="brand-title">Care Guide Notes</span>
-            <span className="brand-subtitle">Secure RBAC & Aggregations</span>
-          </div>
+          Care Guide Notes
         </div>
 
         <nav className="nav-tabs">
@@ -23,26 +16,21 @@ export const Navbar = ({ activeTab, setActiveTab }) => {
             className={`nav-tab-btn ${activeTab === 'notes' ? 'active' : ''}`}
             onClick={() => setActiveTab('notes')}
           >
-            <BookOpen size={16} />
-            <span>Notes</span>
+            Notes
           </button>
 
           <button
             className={`nav-tab-btn ${activeTab === 'interests' ? 'active' : ''}`}
             onClick={() => setActiveTab('interests')}
           >
-            <Hash size={16} />
-            <span>Interests Aggregation</span>
-            <span className="badge-pill">Scenario 1</span>
+            Interests (Agg 1)
           </button>
 
           <button
             className={`nav-tab-btn ${activeTab === 'posts' ? 'active' : ''}`}
             onClick={() => setActiveTab('posts')}
           >
-            <FileText size={16} />
-            <span>User Posts ($lookup)</span>
-            <span className="badge-pill">Scenario 2</span>
+            User Posts (Agg 2)
           </button>
 
           {isAdmin && (
@@ -50,27 +38,18 @@ export const Navbar = ({ activeTab, setActiveTab }) => {
               className={`nav-tab-btn ${activeTab === 'users' ? 'active' : ''}`}
               onClick={() => setActiveTab('users')}
             >
-              <Users size={16} />
-              <span>User Management</span>
-              <span className="badge-pill admin-badge">Admin</span>
+              Users (Admin)
             </button>
           )}
         </nav>
 
         <div className="navbar-user">
-          <div className="user-profile-badge">
-            {isAdmin ? <Shield size={16} className="text-warning" /> : <User size={16} />}
-            <div className="user-details-mini">
-              <span className="user-name">{user?.name}</span>
-              <span className={`role-badge ${isAdmin ? 'badge-admin' : 'badge-user'}`}>
-                {user?.role?.toUpperCase()}
-              </span>
-            </div>
-          </div>
-
-          <button onClick={logout} className="btn-logout" title="Logout">
-            <LogOut size={16} />
-            <span>Logout</span>
+          <span>{user?.name}</span>
+          <span className={`role-badge ${isAdmin ? 'admin' : ''}`}>
+            {user?.role}
+          </span>
+          <button onClick={logout} className="btn-logout">
+            Logout
           </button>
         </div>
       </div>
